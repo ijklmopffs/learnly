@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
-import questionsData from "../../questions.json";
+import { useState } from "react";
 import { Link } from "react-router";
+import questionsData from "../../questions.json";
+import DraggableQuiz from "./draggablequiz";
 
 const optionLabels = ["A", "B", "C", "D"];
 
@@ -10,6 +11,7 @@ export default function Quiz() {
   const [score, setScore] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
   const [feedback, setFeedback] = useState(null);
+  const [quizType, setQuizType] = useState(questionsData[0].type);
 
   const handleAnswer = (option) => {
     setSelectedOption(option);
@@ -21,6 +23,8 @@ export default function Quiz() {
     }
     setTimeout(() => {
       if (currentQuestion + 1 < questionsData.length) {
+        const nextQuestionType = questionsData[currentQuestion + 1].type;
+        setQuizType(nextQuestionType);
         setCurrentQuestion(currentQuestion + 1);
         setSelectedOption(null);
         setFeedback(null);
@@ -30,13 +34,24 @@ export default function Quiz() {
     }, 1000);
   };
 
+  const handleDragAndDropComplete = (newScore) => {
+    setScore(score + newScore);
+    if (currentQuestion + 1 < questionsData.length) {
+      const nextQuestionType = questionsData[currentQuestion + 1].type;
+      setQuizType(nextQuestionType);
+      setCurrentQuestion(currentQuestion + 1);
+    } else {
+      setStep("result");
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-white bg-[#f4f7fd]">
-      {step === "quiz" && (
-        <div className="bg-white w-[30rem] p-6 rounded-lg text-center text-black">
+      {step === "quiz" && quizType === "multiple-choice" && (
+        <div className="bg-white w-4/5 md:w-[30rem] p-6 rounded-lg text-center text-black">
           <div className="bg-purple-800 text-white flex justify-between items-center p-4 rounded-lg">
-            <h1 className="text-2xl font-bold">Goal: 30 points</h1>
-            <p className="capitalize text-xl">current points: {score}</p>
+            <h1 className="text-xl font-bold">Goal: 30 points</h1>
+            <p className="capitalize text-sm">current points: {score}</p>
           </div>
 
           <div className="text-start mt-5">
@@ -68,10 +83,14 @@ export default function Quiz() {
         </div>
       )}
 
+      {step === "quiz" && quizType === "drag-and-drop" && (
+        <DraggableQuiz onComplete={handleDragAndDropComplete} />
+      )}
+
       {step === "result" && (
         <div className="text-center bg-white p-6 rounded-lg shadow-md w-96 text-black">
           <h1 className="text-3xl font-bold">Quiz Completed!</h1>
-          <p className="mt-2 text-lg">Your Score: {score} / 30</p>
+          <p className="mt-2 text-lg">Your Score: {score}</p>
           <button
             className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 cursor-pointer"
             onClick={() => {
@@ -80,6 +99,7 @@ export default function Quiz() {
               setScore(0);
               setSelectedOption(null);
               setFeedback(null);
+              setQuizType(questionsData[0].type);
             }}
           >
             Restart Quiz
